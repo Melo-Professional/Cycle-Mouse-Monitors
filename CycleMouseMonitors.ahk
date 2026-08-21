@@ -1,125 +1,178 @@
-﻿{
-#Persistent
-#NoEnv
-SendMode Input
-SetWorkingDir %A_ScriptDir%
+﻿;@region Setup
+;@region Description
+/************************************************************************
+ * @description Cycle mouse across multiple displays.
+ * @author Melo (melo@meloprofessional.com)
+ * @date 2026/08/21
+ * @releasedate 2022/03/14
+ * @version 2.0.0.104
+ ***********************************************************************/
+
+AppName := "Cycle Mouse Monitors"
+;@Ahk2Exe-Let U_AppName = %A_PriorLine%
+AppVersion := "2.0.0.104"
+;@Ahk2Exe-Let U_Version = %A_PriorLine%
+AppDescription := "Cycle mouse across multiple displays."
+;@endregion
+
+;_bkpMode := "AppVersionAndMinutes"
+;_bkpMinutesThreshold := 1
+
+;@region Directives
+#Requires AutoHotkey v2.0
 #SingleInstance Force
-;#MaxThreadsPerHotkey 5
-Coordmode, Mouse, Screen
+Persistent()
+SetWorkingDir(A_ScriptDir)
+A_AllowMainWindow := 0
+A_IconHidden := true
+A_MenuMaskKey := "vkFF"
+; --- Optimization Settings ---
+;ProcessSetPriority("High")
+ListLines(False)
+KeyHistory(0)
+;A_MaxHotkeysPerInterval := 5000
+;A_HotkeyInterval := 1000
+;@endregion
 
-;OPTIMIZATIONS START
-#NoEnv
-#MaxHotkeysPerInterval 99000000
-#HotkeyInterval 99000000
-#KeyHistory 0
-ListLines Off
-Process, Priority, , A
-SetBatchLines, -1
-SetKeyDelay, -1, -1
-SetMouseDelay, -1
-SetDefaultMouseSpeed, 0
-SetWinDelay, -1
-SetControlDelay, -1
-SendMode Input
-;OPTIMIZATIONS END
+;@region Includes
+#Include *i <_CompilerDirectives>
+#Include *i <_Backup>
+;#Include *i <_SaveSettings>
+#Include *i <_Config&Vars>
+#Include *i <_HelperFuncs>
+;#Include *i <_MessageManager>
+;#Include *i <_TrayIconHandler>
+#Include *i <_Theme>
+;#Include *i <_FrostedTheme>
+#Include *i <_TitleBar>
+;#Include *i <_GuiTracker>
+;#Include *i <_ModernSlider>
+;#Include *i <_Color_Picker_Dialog>
+;#Include *i <_HotkeysRecorder>
+;#Include *i <_ODColors>
+;#Include *i <_OSDCustom>
+#Include *i <_AutoUpdater>
+#Include *i <_SplashScreen>
+;#Include *i <_SplashOSD>
+#Include *i <_About>
+;#Include *i <_Help>
+#Include *i <_Menu>
 
-Appname := "CycleMouseMonitors"
-Version := 1.0
-global Appname
-global Version
-Menu, Tray, Icon, %A_ScriptDir%\CycleMouseMonitors.ico
-
-
-
-
-Menu, Tray, Tip , Cycle Mouse Monitors
-Menu, Tray, NoStandard
-Menu, Tray, deleteall
-Menu, Tray, Add, Opener, opener	
-Menu, Tray, Default, 1&
-;Menu, Tray, Click, 1
-Menu, Tray, Rename, 1&
-Menu, Tray, Add, Start on Boot, BootMenu
-If (CheckStartOnBoot()){
-	Menu, Tray, Check, Start on Boot
-}else{
-	Menu, Tray, Uncheck, Start on Boot
-}
-Menu, Tray, Add, Restart , Restart
-Menu, Tray, Add, About, About
-Menu, Tray, Add, Exit, Exit
-Menu, Tray, Click, 1
+#Include *i <Vars_Custom>
+#Include *i <Menu_Custom>
+;@endregion
 
 
-left := 0
-
-    SM_CMONITORS := 80
-    SysGet, monCount, % SM_CMONITORS
-
-    Loop, % monCount
-	{
-        SysGet, mon%A_Index%, Monitor, %A_Index%
-		if ( mon%A_Index%Left <= left )
-			left := mon%A_Index%Left
-		if ( mon%A_Index%Right >= right )
-			right := mon%A_Index%Right
+;@region Startup
+if !A_Args.Length {
+	if IsSet(SplashScreen) {
+	    SplashScreen()
+	} else if isSet(SplashScreenOSD) {
+		SplashScreenOSD()
 	}
-;	MsgBox, % right  left
-    CoordMode, Mouse, Screen
-    PixOffset := 2        ; how many pixels we consider an edge of the screen
-    SetTimer, WatchMouse, 200
-
 }
-return
 
+IsSet(StartMenu) ? StartMenu() : 0
+IsSet(Menu_Custom) ? Menu_Custom() : 0
+IsSet(StartAutoUpdater) ? StartAutoUpdater() : 0
+;@endregion
+;@endregion
 
+;@region Main
+; Track boundaries
+global leftBoundary := 0
+global rightBoundary := 0
+global destRightX := 0
+global destLeftX := 0
+global jumpIncrease := 2
+global hHook := 0
 
+InitMonitors()
 
+; Register Low-Level Mouse Hook (WH_MOUSE_LL = 14)
+hHook := DllCall("SetWindowsHookEx", "Int", 14, "Ptr", CallbackCreate(LowLevelMouseProc), "Ptr", DllCall("GetModuleHandle", "Ptr", 0, "Ptr"), "UInt", 0, "Ptr")
 
+; Ensure hook is uninstalled gracefully on script exit/reload
+OnExit(Cleanup)
 
-opener:
-Menu, Tray, Show
-return
-
-CheckStartOnBoot()
+Cleanup(ExitReason, ExitCode)
 {
-RegRead, StartupReg, HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Run, %Appname%
-return StartupReg
+    global hHook
+    if (hHook)
+    {
+        DllCall("UnhookWindowsHookEx", "Ptr", hHook)
+        hHook := 0
+    }
 }
 
-
-BootMenu:
-If (CheckStartOnBoot()){
-	RegDelete, HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Run, %Appname%
-	Menu, Tray, Uncheck, Start on Boot
-}else{
-	RegWrite, REG_SZ, HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Run, %Appname%, %A_AhkPath%
-	Menu, Tray, Check, Start on Boot
-}
-Return
-
-Restart:
-Reload
-Return
-
-About:
-MsgBox ,,%Appname%,Cycle Mouse Monitors`nversion %Version%`n`nCycle mouse across multiple displays.`n`n`n`nBy Melo`nmelo@meloprofessional.com`n© Melo. All rights reserved.
-return
-
-Exit:
-ExitApp
-Return
-
-
-
-WatchMouse:
+InitMonitors()
 {
-    MouseGetPos, x, y ; relative to primary monitor
+    global leftBoundary, rightBoundary, destRightX, destLeftX
+    
+    monCount := MonitorGetCount()
+    if (monCount < 2)
+        return
 
-
-if (left <= x && x <= (left + PixOffset) )
-	MouseMove, right-(1+PixOffset), y, ,
-
-if ( (right - PixOffset) <= x && x <= right)
-	MouseMove, left+(1+PixOffset), y, ,
+    minL := 999999
+    maxR := -999999
+    
+    Loop monCount
+    {
+        MonitorGet(A_Index, &mL, &mT, &mR, &mB)
+        if (mL < minL) {
+            minL := mL
+        }
+        if (mR > maxR) {
+            maxR := mR
+        }
+    }
+    
+    leftBoundary := minL
+    rightBoundary := maxR - 1
+    
+    destRightX := rightBoundary - jumpIncrease
+    destLeftX := leftBoundary + jumpIncrease
 }
+
+LowLevelMouseProc(nCode, wParam, lParam)
+{
+    if (nCode >= 0 && wParam == 0x0200) ; WM_MOUSEMOVE
+    {
+        static isTeleporting := false
+        if isTeleporting
+            return DllCall("CallNextHookEx", "Ptr", 0, "Int", nCode, "Ptr", wParam, "Ptr", lParam, "Ptr")
+
+        x := NumGet(lParam, 0, "Int")
+        y := NumGet(lParam, 4, "Int")
+
+        if (x <= leftBoundary)
+        {
+            isTeleporting := true
+            DllCall("SetCursorPos", "Int", destRightX, "Int", y)
+            SetTimer(() => (isTeleporting := false), -100)
+            return 1
+        }
+        else if (x >= rightBoundary)
+        {
+            isTeleporting := true
+            DllCall("SetCursorPos", "Int", destLeftX, "Int", y)
+            SetTimer(() => (isTeleporting := false), -100)
+            return 1
+        }
+    }
+    
+    return DllCall("CallNextHookEx", "Ptr", 0, "Int", nCode, "Ptr", wParam, "Ptr", lParam, "Ptr")
+}
+
+;@region Hotkeys
+;@endregion
+
+
+
+;@endregion
+IsSet(CheckReloadArgs) ? CheckReloadArgs() : 0
+
+;throw Error('Message', A_ThisFunc, )
+;a := "test"
+;OutputDebug(a) ; debug tab
+

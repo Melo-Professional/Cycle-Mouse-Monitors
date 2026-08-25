@@ -3,14 +3,14 @@
 /************************************************************************
  * @description Cycle mouse across multiple displays.
  * @author Melo (melo@meloprofessional.com)
- * @date 2026/08/21
+ * @date 2026/08/25
  * @releasedate 2022/03/14
- * @version 2.0.0.104
+ * @version 2.0.0.107
  ***********************************************************************/
 
 AppName := "Cycle Mouse Monitors"
 ;@Ahk2Exe-Let U_AppName = %A_PriorLine%
-AppVersion := "2.0.0.104"
+AppVersion := "2.0.0.107"
 ;@Ahk2Exe-Let U_Version = %A_PriorLine%
 AppDescription := "Cycle mouse across multiple displays."
 ;@endregion
@@ -43,9 +43,9 @@ KeyHistory(0)
 ;#Include *i <_MessageManager>
 ;#Include *i <_TrayIconHandler>
 #Include *i <_Theme>
-;#Include *i <_FrostedTheme>
+#Include *i <_FrostedTheme>
 #Include *i <_TitleBar>
-;#Include *i <_GuiTracker>
+#Include *i <_GuiTracker>
 ;#Include *i <_ModernSlider>
 ;#Include *i <_Color_Picker_Dialog>
 ;#Include *i <_HotkeysRecorder>
@@ -89,14 +89,11 @@ global hHook := 0
 
 InitMonitors()
 
-; Register Low-Level Mouse Hook (WH_MOUSE_LL = 14)
-hHook := DllCall("SetWindowsHookEx", "Int", 14, "Ptr", CallbackCreate(LowLevelMouseProc), "Ptr", DllCall("GetModuleHandle", "Ptr", 0, "Ptr"), "UInt", 0, "Ptr")
 
 ; Ensure hook is uninstalled gracefully on script exit/reload
 OnExit(Cleanup)
 
-Cleanup(ExitReason, ExitCode)
-{
+Cleanup(ExitReason, ExitCode) {
     global hHook
     if (hHook)
     {
@@ -105,8 +102,7 @@ Cleanup(ExitReason, ExitCode)
     }
 }
 
-InitMonitors()
-{
+InitMonitors() {
     global leftBoundary, rightBoundary, destRightX, destLeftX
     
     monCount := MonitorGetCount()
@@ -132,10 +128,12 @@ InitMonitors()
     
     destRightX := rightBoundary - jumpIncrease
     destLeftX := leftBoundary + jumpIncrease
+
+	; Register Low-Level Mouse Hook (WH_MOUSE_LL = 14)
+	hHook := DllCall("SetWindowsHookEx", "Int", 14, "Ptr", CallbackCreate(LowLevelMouseProc), "Ptr", DllCall("GetModuleHandle", "Ptr", 0, "Ptr"), "UInt", 0, "Ptr")
 }
 
-LowLevelMouseProc(nCode, wParam, lParam)
-{
+LowLevelMouseProc(nCode, wParam, lParam) {
     if (nCode >= 0 && wParam == 0x0200) ; WM_MOUSEMOVE
     {
         static isTeleporting := false

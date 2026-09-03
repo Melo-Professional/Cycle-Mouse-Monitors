@@ -3,14 +3,14 @@
 /************************************************************************
  * @description Cycle mouse across multiple displays.
  * @author Melo (melo@meloprofessional.com)
- * @date 2026/08/25
+ * @date 2026/09/03
  * @releasedate 2022/03/14
- * @version 2.0.0.107
+ * @version 2.0.1.0
  ***********************************************************************/
 
 AppName := "Cycle Mouse Monitors"
 ;@Ahk2Exe-Let U_AppName = %A_PriorLine%
-AppVersion := "2.0.0.107"
+AppVersion := "2.0.1.0"
 ;@Ahk2Exe-Let U_Version = %A_PriorLine%
 AppDescription := "Cycle mouse across multiple displays."
 ;@endregion
@@ -106,8 +106,8 @@ InitMonitors() {
     global leftBoundary, rightBoundary, destRightX, destLeftX
     
     monCount := MonitorGetCount()
-    if (monCount < 2)
-        return
+;    if (monCount < 1)
+;        return
 
     minL := 999999
     maxR := -999999

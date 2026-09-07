@@ -1,10 +1,22 @@
-# Cycle Mouse Monitors
+<h1 align="center">Cycle Mouse Monitors</h1>
+<p align="center">
+  <a href="https://github.com/Melo-Professional/Cycle-Mouse-Monitors/releases"><img src="https://img.shields.io/github/v/release/Melo-Professional/Cycle-Mouse-Monitors?sort=semver&color=purple" alt="version"></a>
+    <a href="#screenshots"><img src="https://img.shields.io/static/v1?label=made%20with&message=%E2%9D%A4&color=red"></a>
+</p>
 
-![version](https://img.shields.io/github/v/release/Melo-Professional/Scroll-Flow?sort=semver&color=purple) ![](https://img.shields.io/static/v1?label=made%20with&message=%E2%9D%A4&color=red)
-
-To infinitely cycle the mouse across multiple monitors
+<p align="center">To infinitely cycle the mouse across multiple monitors</p>
 
 ---
+
+
+
+
+
+
+
+
+
+
 
 **Cycle Mouse** creates an infinite horizontal desktop across multiple monitors by seamlessly wrapping the mouse pointer from one side of the monitor layout to the opposite side.
 
